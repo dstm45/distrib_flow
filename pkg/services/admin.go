@@ -4,26 +4,55 @@ import (
 	"context"
 
 	"github.com/dstm45/template/pkg/database"
+	"github.com/google/uuid"
 )
 
 type AdminService interface {
-	CreateUser(ctx context.Context) error
-	GetUser(ctx context.Context) error
-	DeleteUser(ctx context.Context) error
-	UpdateUser(ctx context.Context) error
+	// User management
+	NewUser(ctx context.Context, email, passwordHash string, role database.Role) (database.User, error)
+	GetUserByEmail(ctx context.Context, email string) (database.User, error)
+	GetUserDataByUUID(ctx context.Context, uuid uuid.UUID) (database.UserPublicDatum, error)
+
+	// Admin role management
+	CreateAdmin(ctx context.Context, userID uuid.UUID) error
+	GetAdmin(ctx context.Context, userID uuid.UUID) (database.Admin, error)
+	DeleteAdmin(ctx context.Context, userID uuid.UUID) error
 }
 
 type adminService struct {
 	DB *database.Queries
 }
 
-func NewAdminService(queries *database.Queries) *adminService {
+func NewAdminService(queries *database.Queries) AdminService {
 	return &adminService{
 		DB: queries,
 	}
 }
 
-func (svc *adminService) CreateUser(ctx context.Context) error { return nil }
-func (svc *adminService) GetUser(ctx context.Context) error    { return nil }
-func (svc *adminService) DeleteUser(ctx context.Context) error { return nil }
-func (svc *adminService) UpdateUser(ctx context.Context) error { return nil }
+func (s *adminService) NewUser(ctx context.Context, email, passwordHash string, role database.Role) (database.User, error) {
+	return s.DB.NewUser(ctx, database.NewUserParams{
+		Email:        email,
+		PasswordHash: passwordHash,
+		Role:         role,
+	})
+}
+
+func (s *adminService) GetUserByEmail(ctx context.Context, email string) (database.User, error) {
+	return s.DB.GetUserByEmail(ctx, email)
+}
+
+func (s *adminService) GetUserDataByUUID(ctx context.Context, uuid uuid.UUID) (database.UserPublicDatum, error) {
+	return s.DB.GetUserDataByUUID(ctx, uuid)
+}
+
+func (s *adminService) CreateAdmin(ctx context.Context, userID uuid.UUID) error {
+	return s.DB.CreateAdmin(ctx, userID)
+}
+
+func (s *adminService) GetAdmin(ctx context.Context, userID uuid.UUID) (database.Admin, error) {
+	return s.DB.GetAdminByUUID(ctx, userID)
+}
+
+func (s *adminService) DeleteAdmin(ctx context.Context, userID uuid.UUID) error {
+	return s.DB.DeleteAdmin(ctx, userID)
+}

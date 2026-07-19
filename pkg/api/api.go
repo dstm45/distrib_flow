@@ -7,23 +7,23 @@ import (
 )
 
 type API struct {
-	UserController *controllers.UserController
+	AdminController *controllers.AdminController
 }
 
 type Services struct {
-	UserService services.AdminService
+	AdminService services.AdminService
 }
 
 func InitializeServices(queries *database.Queries) *Services {
 	userService := services.NewAdminService(queries)
 	return &Services{
-		UserService: userService,
+		AdminService: userService,
 	}
 }
 
 func NewAPI(svc *Services) *API {
-	UserController := controllers.NewUserController(svc.UserService)
+	UserController := controllers.NewAdminController(svc.AdminService)
 	return &API{
-		UserController: UserController,
+		AdminController: UserController,
 	}
 }
