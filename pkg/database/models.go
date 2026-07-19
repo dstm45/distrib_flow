@@ -15,8 +15,9 @@ import (
 type Role string
 
 const (
-	RoleStandard Role = "standard"
-	RoleAdmin    Role = "admin"
+	RoleAdmin          Role = "admin"
+	RoleFranchiseOwner Role = "franchise_owner"
+	RoleVendeur        Role = "vendeur"
 )
 
 func (e *Role) Scan(src interface{}) error {
@@ -143,8 +144,22 @@ type Admin struct {
 	UserUuid uuid.UUID `json:"user_uuid"`
 }
 
-type Standard struct {
-	UserUuid uuid.UUID `json:"user_uuid"`
+type Facture struct {
+	Uuid uuid.UUID `json:"uuid"`
+}
+
+type Franchise struct {
+	Uuid      uuid.UUID          `json:"uuid"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type FranchiseOwner struct {
+	UserUuid      uuid.UUID `json:"user_uuid"`
+	FranchiseUuid uuid.UUID `json:"franchise_uuid"`
+}
+
+type Produit struct {
+	Uuid uuid.UUID `json:"uuid"`
 }
 
 type Token struct {
@@ -175,4 +190,17 @@ type UserPublicDatum struct {
 	Email string    `json:"email"`
 	Uuid  uuid.UUID `json:"uuid"`
 	Role  Role      `json:"role"`
+}
+
+type Vendeur struct {
+	UserUuid      uuid.UUID `json:"user_uuid"`
+	FranchiseUuid uuid.UUID `json:"franchise_uuid"`
+}
+
+type Vente struct {
+	Uuid          uuid.UUID `json:"uuid"`
+	FactureUuid   uuid.UUID `json:"facture_uuid"`
+	VendeurUuid   uuid.UUID `json:"vendeur_uuid"`
+	FranchiseUuid uuid.UUID `json:"franchise_uuid"`
+	ProduitUuid   uuid.UUID `json:"produit_uuid"`
 }

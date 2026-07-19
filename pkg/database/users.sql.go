@@ -24,19 +24,6 @@ func (q *Queries) GetAdminData(ctx context.Context, userUuid uuid.UUID) (UserPub
 	return i, err
 }
 
-const getStandardData = `-- name: GetStandardData :one
-SELECT  u.email, u.uuid, u.role FROM standards s
-JOIN user_public_data u on u.uuid=s.uuid
-WHERE s.user_uuid=$1
-`
-
-func (q *Queries) GetStandardData(ctx context.Context, userUuid uuid.UUID) (UserPublicDatum, error) {
-	row := q.db.QueryRow(ctx, getStandardData, userUuid)
-	var i UserPublicDatum
-	err := row.Scan(&i.Email, &i.Uuid, &i.Role)
-	return i, err
-}
-
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT uuid, password_hash FROM users WHERE email=$1
 `
@@ -70,15 +57,6 @@ INSERT INTO admins (user_uuid) VALUES ($1)
 
 func (q *Queries) NewAdmin(ctx context.Context, userUuid uuid.UUID) error {
 	_, err := q.db.Exec(ctx, newAdmin, userUuid)
-	return err
-}
-
-const newStandard = `-- name: NewStandard :exec
-INSERT INTO standards (user_uuid) VALUES ($1)
-`
-
-func (q *Queries) NewStandard(ctx context.Context, userUuid uuid.UUID) error {
-	_, err := q.db.Exec(ctx, newStandard, userUuid)
 	return err
 }
 

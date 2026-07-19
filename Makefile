@@ -13,3 +13,6 @@ migrate-down:
 migrate-status:
 	$(GOOSE) status
 
+migrate-reset:
+	$(GOOSE) reset
+
