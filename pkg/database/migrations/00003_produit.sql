@@ -28,8 +28,6 @@ DROP INDEX idx_ventes_vendeur;
 DROP INDEX idx_ventes_franchise;
 DROP INDEX idx_ventes_produit;
 
-DROP TABLE ventes;
-DROP TABLE factures;
-DROP TABLE produits;
-
-
+DROP TABLE if exists ventes;
+DROP TABLE if exists factures;
+DROP TABLE if exists produits;

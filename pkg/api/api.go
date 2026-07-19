@@ -11,11 +11,11 @@ type API struct {
 }
 
 type Services struct {
-	UserService services.UserService
+	UserService services.AdminService
 }
 
 func InitializeServices(queries *database.Queries) *Services {
-	userService := services.NewUserService(queries)
+	userService := services.NewAdminService(queries)
 	return &Services{
 		UserService: userService,
 	}

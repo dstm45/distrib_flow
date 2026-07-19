@@ -1,9 +1,15 @@
 -- name: CreateProduit :one
-INSERT INTO produits (uuid) RETURNING *;
+INSERT INTO produits (name, price) 
+VALUES ($1, $2)
+RETURNING *;
 
 -- name: GetProduitByUUID :one
 SELECT * FROM produits 
 WHERE uuid = $1;
+
+-- name: GetProduitByName :one
+SELECT * FROM produits 
+WHERE name = $1;
 
 -- name: ListProduits :many
 SELECT * FROM produits;

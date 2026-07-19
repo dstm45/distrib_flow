@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createFacture = `-- name: CreateFacture :one
@@ -28,16 +29,21 @@ func (q *Queries) CreateFacture(ctx context.Context, dollar_1 interface{}) (uuid
 }
 
 const createProduit = `-- name: CreateProduit :one
-INSERT INTO produits (uuid) 
-VALUES (COALESCE($1, gen_random_uuid()))
-RETURNING uuid
+INSERT INTO produits (name, price) 
+VALUES ($1, $2)
+RETURNING uuid, name, price
 `
 
-func (q *Queries) CreateProduit(ctx context.Context, dollar_1 interface{}) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, createProduit, dollar_1)
-	var uuid uuid.UUID
-	err := row.Scan(&uuid)
-	return uuid, err
+type CreateProduitParams struct {
+	Name  string        `json:"name"`
+	Price pgtype.Float8 `json:"price"`
+}
+
+func (q *Queries) CreateProduit(ctx context.Context, arg CreateProduitParams) (Produit, error) {
+	row := q.db.QueryRow(ctx, createProduit, arg.Name, arg.Price)
+	var i Produit
+	err := row.Scan(&i.Uuid, &i.Name, &i.Price)
+	return i, err
 }
 
 const createVente = `-- name: CreateVente :one
@@ -118,16 +124,28 @@ func (q *Queries) GetFactureByUUID(ctx context.Context, argUuid uuid.UUID) (uuid
 	return uuid_2, err
 }
 
+const getProduitByName = `-- name: GetProduitByName :one
+SELECT uuid, name, price FROM produits 
+WHERE name = $1
+`
+
+func (q *Queries) GetProduitByName(ctx context.Context, name string) (Produit, error) {
+	row := q.db.QueryRow(ctx, getProduitByName, name)
+	var i Produit
+	err := row.Scan(&i.Uuid, &i.Name, &i.Price)
+	return i, err
+}
+
 const getProduitByUUID = `-- name: GetProduitByUUID :one
-SELECT uuid FROM produits 
+SELECT uuid, name, price FROM produits 
 WHERE uuid = $1
 `
 
-func (q *Queries) GetProduitByUUID(ctx context.Context, argUuid uuid.UUID) (uuid.UUID, error) {
+func (q *Queries) GetProduitByUUID(ctx context.Context, argUuid uuid.UUID) (Produit, error) {
 	row := q.db.QueryRow(ctx, getProduitByUUID, argUuid)
-	var uuid_2 uuid.UUID
-	err := row.Scan(&uuid_2)
-	return uuid_2, err
+	var i Produit
+	err := row.Scan(&i.Uuid, &i.Name, &i.Price)
+	return i, err
 }
 
 const getVenteByUUID = `-- name: GetVenteByUUID :one
@@ -185,22 +203,22 @@ func (q *Queries) GetVenteDetailsWithVendeurEmail(ctx context.Context, argUuid u
 }
 
 const listProduits = `-- name: ListProduits :many
-SELECT uuid FROM produits
+SELECT uuid, name, price FROM produits
 `
 
-func (q *Queries) ListProduits(ctx context.Context) ([]uuid.UUID, error) {
+func (q *Queries) ListProduits(ctx context.Context) ([]Produit, error) {
 	rows, err := q.db.Query(ctx, listProduits)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []uuid.UUID
+	var items []Produit
 	for rows.Next() {
-		var uuid uuid.UUID
-		if err := rows.Scan(&uuid); err != nil {
+		var i Produit
+		if err := rows.Scan(&i.Uuid, &i.Name, &i.Price); err != nil {
 			return nil, err
 		}
-		items = append(items, uuid)
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

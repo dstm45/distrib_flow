@@ -24,27 +24,6 @@ func (q *Queries) CreateFranchise(ctx context.Context, dollar_1 interface{}) (Fr
 	return i, err
 }
 
-const createFranchiseOwner = `-- name: CreateFranchiseOwner :one
-
-INSERT INTO franchise_owners (user_uuid, franchise_uuid) 
-VALUES ($1, $2)
-RETURNING user_uuid, franchise_uuid
-`
-
-type CreateFranchiseOwnerParams struct {
-	UserUuid      uuid.UUID `json:"user_uuid"`
-	FranchiseUuid uuid.UUID `json:"franchise_uuid"`
-}
-
-// -------------------------------------------
-// FRANCHISE OWNERS
-func (q *Queries) CreateFranchiseOwner(ctx context.Context, arg CreateFranchiseOwnerParams) (FranchiseOwner, error) {
-	row := q.db.QueryRow(ctx, createFranchiseOwner, arg.UserUuid, arg.FranchiseUuid)
-	var i FranchiseOwner
-	err := row.Scan(&i.UserUuid, &i.FranchiseUuid)
-	return i, err
-}
-
 const createVendeur = `-- name: CreateVendeur :one
 
 INSERT INTO vendeurs (user_uuid, franchise_uuid) 
@@ -99,11 +78,14 @@ func (q *Queries) GetFranchiseByUUID(ctx context.Context, argUuid uuid.UUID) (Fr
 }
 
 const getFranchisesByOwner = `-- name: GetFranchisesByOwner :many
+
 SELECT f.uuid, f.created_at FROM franchises f
 JOIN franchise_owners fo ON f.uuid = fo.franchise_uuid
 WHERE fo.user_uuid = $1
 `
 
+// -------------------------------------------
+// FRANCHISE OWNERS
 func (q *Queries) GetFranchisesByOwner(ctx context.Context, userUuid uuid.UUID) ([]Franchise, error) {
 	rows, err := q.db.Query(ctx, getFranchisesByOwner, userUuid)
 	if err != nil {

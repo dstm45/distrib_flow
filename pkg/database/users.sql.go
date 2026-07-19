@@ -24,6 +24,19 @@ func (q *Queries) GetAdminData(ctx context.Context, userUuid uuid.UUID) (UserPub
 	return i, err
 }
 
+const getFranchiseOwnerData = `-- name: GetFranchiseOwnerData :one
+SELECT u.email, u.uuid, u.role FROM franchise_owners fo
+JOIN user_public_data u ON u.uuid = fo.user_uuid
+WHERE fo.user_uuid = $1
+`
+
+func (q *Queries) GetFranchiseOwnerData(ctx context.Context, userUuid uuid.UUID) (UserPublicDatum, error) {
+	row := q.db.QueryRow(ctx, getFranchiseOwnerData, userUuid)
+	var i UserPublicDatum
+	err := row.Scan(&i.Email, &i.Uuid, &i.Role)
+	return i, err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT uuid, password_hash FROM users WHERE email=$1
 `
@@ -51,13 +64,17 @@ func (q *Queries) GetUserDataByUUID(ctx context.Context, argUuid uuid.UUID) (Use
 	return i, err
 }
 
-const newAdmin = `-- name: NewAdmin :exec
-INSERT INTO admins (user_uuid) VALUES ($1)
+const getVendeurData = `-- name: GetVendeurData :one
+SELECT u.email, u.uuid, u.role FROM vendeurs v
+JOIN user_public_data u ON u.uuid = v.user_uuid
+WHERE v.user_uuid = $1
 `
 
-func (q *Queries) NewAdmin(ctx context.Context, userUuid uuid.UUID) error {
-	_, err := q.db.Exec(ctx, newAdmin, userUuid)
-	return err
+func (q *Queries) GetVendeurData(ctx context.Context, userUuid uuid.UUID) (UserPublicDatum, error) {
+	row := q.db.QueryRow(ctx, getVendeurData, userUuid)
+	var i UserPublicDatum
+	err := row.Scan(&i.Email, &i.Uuid, &i.Role)
+	return i, err
 }
 
 const newUser = `-- name: NewUser :one
@@ -81,4 +98,18 @@ func (q *Queries) NewUser(ctx context.Context, arg NewUserParams) (User, error) 
 		&i.Role,
 	)
 	return i, err
+}
+
+const newVendeur = `-- name: NewVendeur :exec
+INSERT INTO vendeurs(user_uuid, franchise_uuid) VALUES($1, $2)
+`
+
+type NewVendeurParams struct {
+	UserUuid      uuid.UUID `json:"user_uuid"`
+	FranchiseUuid uuid.UUID `json:"franchise_uuid"`
+}
+
+func (q *Queries) NewVendeur(ctx context.Context, arg NewVendeurParams) error {
+	_, err := q.db.Exec(ctx, newVendeur, arg.UserUuid, arg.FranchiseUuid)
+	return err
 }

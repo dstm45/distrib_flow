@@ -18,11 +18,6 @@ WHERE uuid = $1;
 ---------------------------------------------
 -- FRANCHISE OWNERS
 
--- name: CreateFranchiseOwner :one
-INSERT INTO franchise_owners (user_uuid, franchise_uuid) 
-VALUES ($1, $2)
-RETURNING *;
-
 -- name: GetFranchisesByOwner :many
 SELECT f.* FROM franchises f
 JOIN franchise_owners fo ON f.uuid = fo.franchise_uuid

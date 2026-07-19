@@ -159,7 +159,9 @@ type FranchiseOwner struct {
 }
 
 type Produit struct {
-	Uuid uuid.UUID `json:"uuid"`
+	Uuid  uuid.UUID     `json:"uuid"`
+	Name  string        `json:"name"`
+	Price pgtype.Float8 `json:"price"`
 }
 
 type Token struct {
