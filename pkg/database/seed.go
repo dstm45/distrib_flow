@@ -31,14 +31,14 @@ func SeedDatabase(ctx context.Context, q *Queries) error {
 		log.Printf("Erreur lors de la vérification de l'admin: %v\n", err)
 	}
 
-	// 2. Seed default owner if not exists
-	_, err = q.GetUserByEmail(ctx, "owner@distribflow.com")
+	// 2. Seed default owner and seller if they do not exist
+	_, err = q.GetUserByEmail(ctx, "jean.paul@distribflow.com")
 	if errors.Is(err, pgx.ErrNoRows) {
-		log.Println("Seeding default franchise owner user (owner@distribflow.com)...")
-		const ownerPasswordHash = "$2b$12$FKJSaAgcLA.UCmxcZutnbONtjc7dDnFZYqkajnaV3it9dDIlPrdkG"
+		log.Println("Seeding default franchise owner user (jean.paul@distribflow.com)...")
+		const defaultPasswordHash = "$2b$12$FKJSaAgcLA.UCmxcZutnbONtjc7dDnFZYqkajnaV3it9dDIlPrdkG"
 		owner, err := q.NewUser(ctx, NewUserParams{
-			Email:        "owner@distribflow.com",
-			PasswordHash: ownerPasswordHash,
+			Email:        "jean.paul@distribflow.com",
+			PasswordHash: defaultPasswordHash,
 			Role:         RoleFranchiseOwner,
 		})
 		if err == nil {
@@ -49,6 +49,22 @@ func SeedDatabase(ctx context.Context, q *Queries) error {
 					UserUuid:      owner.Uuid,
 					FranchiseUuid: franchise.Uuid,
 				})
+
+				// Seed default seller (josianne@distribflow.com) and link to the same franchise
+				log.Println("Seeding default seller user (josianne@distribflow.com)...")
+				seller, err := q.NewUser(ctx, NewUserParams{
+					Email:        "josianne@distribflow.com",
+					PasswordHash: defaultPasswordHash,
+					Role:         RoleVendeur,
+				})
+				if err == nil {
+					_ = q.NewVendeur(ctx, NewVendeurParams{
+						UserUuid:      seller.Uuid,
+						FranchiseUuid: franchise.Uuid,
+					})
+				} else {
+					log.Printf("Erreur lors du seeding de la vendeuse: %v\n", err)
+				}
 			}
 		} else {
 			log.Printf("Erreur lors du seeding de l'owner: %v\n", err)
