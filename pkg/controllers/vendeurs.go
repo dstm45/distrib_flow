@@ -6,7 +6,6 @@ import (
 
 	"github.com/dstm45/template/pkg/services"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 )
 
 type VendeurController struct {
@@ -38,7 +37,7 @@ func (c *VendeurController) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *VendeurController) Get(w http.ResponseWriter, r *http.Request) {
-	idStr := mux.Vars(r)["user_uuid"]
+	idStr := r.PathValue("user_uuid")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid User UUID", http.StatusBadRequest)
@@ -53,7 +52,7 @@ func (c *VendeurController) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *VendeurController) ListByFranchise(w http.ResponseWriter, r *http.Request) {
-	idStr := mux.Vars(r)["franchise_uuid"]
+	idStr := r.PathValue("franchise_uuid")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid Franchise UUID", http.StatusBadRequest)
@@ -68,7 +67,7 @@ func (c *VendeurController) ListByFranchise(w http.ResponseWriter, r *http.Reque
 }
 
 func (c *VendeurController) Update(w http.ResponseWriter, r *http.Request) {
-	userID, err := uuid.Parse(mux.Vars(r)["user_uuid"])
+	userID, err := uuid.Parse(r.PathValue("user_uuid"))
 	if err != nil {
 		http.Error(w, "Invalid User UUID", http.StatusBadRequest)
 		return
@@ -89,7 +88,7 @@ func (c *VendeurController) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *VendeurController) Delete(w http.ResponseWriter, r *http.Request) {
-	idStr := mux.Vars(r)["user_uuid"]
+	idStr := r.PathValue("user_uuid")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid User UUID", http.StatusBadRequest)

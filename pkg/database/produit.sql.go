@@ -12,6 +12,33 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const clearAllFactures = `-- name: ClearAllFactures :exec
+DELETE FROM factures
+`
+
+func (q *Queries) ClearAllFactures(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, clearAllFactures)
+	return err
+}
+
+const clearAllProduits = `-- name: ClearAllProduits :exec
+DELETE FROM produits
+`
+
+func (q *Queries) ClearAllProduits(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, clearAllProduits)
+	return err
+}
+
+const clearAllVentes = `-- name: ClearAllVentes :exec
+DELETE FROM ventes
+`
+
+func (q *Queries) ClearAllVentes(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, clearAllVentes)
+	return err
+}
+
 const createFacture = `-- name: CreateFacture :one
 
 INSERT INTO factures (uuid) 
@@ -146,6 +173,50 @@ func (q *Queries) GetProduitByUUID(ctx context.Context, argUuid uuid.UUID) (Prod
 	var i Produit
 	err := row.Scan(&i.Uuid, &i.Name, &i.Price)
 	return i, err
+}
+
+const getVendeurRecentSales = `-- name: GetVendeurRecentSales :many
+SELECT 
+    v.uuid AS vente_uuid,
+    p.name AS produit_name,
+    p.price AS produit_price,
+    v.facture_uuid
+FROM ventes v
+JOIN produits p ON v.produit_uuid = p.uuid
+WHERE v.vendeur_uuid = $1
+ORDER BY v.uuid DESC
+`
+
+type GetVendeurRecentSalesRow struct {
+	VenteUuid    uuid.UUID     `json:"vente_uuid"`
+	ProduitName  string        `json:"produit_name"`
+	ProduitPrice pgtype.Float8 `json:"produit_price"`
+	FactureUuid  uuid.UUID     `json:"facture_uuid"`
+}
+
+func (q *Queries) GetVendeurRecentSales(ctx context.Context, vendeurUuid uuid.UUID) ([]GetVendeurRecentSalesRow, error) {
+	rows, err := q.db.Query(ctx, getVendeurRecentSales, vendeurUuid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetVendeurRecentSalesRow
+	for rows.Next() {
+		var i GetVendeurRecentSalesRow
+		if err := rows.Scan(
+			&i.VenteUuid,
+			&i.ProduitName,
+			&i.ProduitPrice,
+			&i.FactureUuid,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getVenteByUUID = `-- name: GetVenteByUUID :one

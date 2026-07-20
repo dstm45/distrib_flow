@@ -7,23 +7,41 @@ import (
 )
 
 type API struct {
-	AdminController *controllers.AdminController
+	AdminController          *controllers.AdminController
+	FranchiseController      *controllers.FranchiseController
+	FranchiseOwnerController *controllers.FranchiseOwnerController
+	VendeurController        *controllers.VendeurController
+	AuthController           *controllers.AuthController
+	ProduitController        *controllers.ProduitController
 }
 
 type Services struct {
-	AdminService services.AdminService
+	AdminService          services.AdminService
+	FranchiseService      services.FranchiseService
+	FranchiseOwnerService services.FranchiseOwnerService
+	VendeurService        services.VendeurService
+	AuthService           services.AuthService
+	ProduitService        services.ProduitService
 }
 
 func InitializeServices(queries *database.Queries) *Services {
-	userService := services.NewAdminService(queries)
 	return &Services{
-		AdminService: userService,
+		AdminService:          services.NewAdminService(queries),
+		FranchiseService:      services.NewFranchiseService(queries),
+		FranchiseOwnerService: services.NewFranchiseOwnerService(queries),
+		VendeurService:        services.NewVendeurService(queries),
+		AuthService:           services.NewAuthService(queries),
+		ProduitService:        services.NewProduitService(queries),
 	}
 }
 
 func NewAPI(svc *Services) *API {
-	UserController := controllers.NewAdminController(svc.AdminService)
 	return &API{
-		AdminController: UserController,
+		AdminController:          controllers.NewAdminController(svc.AdminService),
+		FranchiseController:      controllers.NewFranchiseController(svc.FranchiseService),
+		FranchiseOwnerController: controllers.NewFranchiseOwnerController(svc.FranchiseOwnerService),
+		VendeurController:        controllers.NewVendeurController(svc.VendeurService),
+		AuthController:           controllers.NewAuthController(svc.AuthService),
+		ProduitController:        controllers.NewProduitController(svc.ProduitService),
 	}
 }

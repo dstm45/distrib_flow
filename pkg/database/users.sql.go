@@ -13,7 +13,7 @@ import (
 
 const getAdminData = `-- name: GetAdminData :one
 SELECT u.email, u.uuid, u.role FROM admins a
-JOIN user_public_data u on u.UUID=a.uuid
+JOIN user_public_data u on u.UUID=a.user_uuid
 WHERE a.user_uuid=$1
 `
 
@@ -75,6 +75,30 @@ func (q *Queries) GetVendeurData(ctx context.Context, userUuid uuid.UUID) (UserP
 	var i UserPublicDatum
 	err := row.Scan(&i.Email, &i.Uuid, &i.Role)
 	return i, err
+}
+
+const listUsers = `-- name: ListUsers :many
+SELECT email, uuid, role FROM user_public_data
+`
+
+func (q *Queries) ListUsers(ctx context.Context) ([]UserPublicDatum, error) {
+	rows, err := q.db.Query(ctx, listUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UserPublicDatum
+	for rows.Next() {
+		var i UserPublicDatum
+		if err := rows.Scan(&i.Email, &i.Uuid, &i.Role); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const newUser = `-- name: NewUser :one

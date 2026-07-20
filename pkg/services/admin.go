@@ -10,12 +10,13 @@ import (
 type AdminService interface {
 	// User management
 	NewUser(ctx context.Context, email, passwordHash string, role database.Role) (database.User, error)
-	GetUserByEmail(ctx context.Context, email string) (database.User, error)
+	GetUserByEmail(ctx context.Context, email string) (database.GetUserByEmailRow, error)
 	GetUserDataByUUID(ctx context.Context, uuid uuid.UUID) (database.UserPublicDatum, error)
+	ListUsers(ctx context.Context) ([]database.UserPublicDatum, error)
 
 	// Admin role management
 	CreateAdmin(ctx context.Context, userID uuid.UUID) error
-	GetAdmin(ctx context.Context, userID uuid.UUID) (database.Admin, error)
+	GetAdmin(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
 	DeleteAdmin(ctx context.Context, userID uuid.UUID) error
 }
 
@@ -37,7 +38,7 @@ func (s *adminService) NewUser(ctx context.Context, email, passwordHash string, 
 	})
 }
 
-func (s *adminService) GetUserByEmail(ctx context.Context, email string) (database.User, error) {
+func (s *adminService) GetUserByEmail(ctx context.Context, email string) (database.GetUserByEmailRow, error) {
 	return s.DB.GetUserByEmail(ctx, email)
 }
 
@@ -45,11 +46,15 @@ func (s *adminService) GetUserDataByUUID(ctx context.Context, uuid uuid.UUID) (d
 	return s.DB.GetUserDataByUUID(ctx, uuid)
 }
 
+func (s *adminService) ListUsers(ctx context.Context) ([]database.UserPublicDatum, error) {
+	return s.DB.ListUsers(ctx)
+}
+
 func (s *adminService) CreateAdmin(ctx context.Context, userID uuid.UUID) error {
 	return s.DB.CreateAdmin(ctx, userID)
 }
 
-func (s *adminService) GetAdmin(ctx context.Context, userID uuid.UUID) (database.Admin, error) {
+func (s *adminService) GetAdmin(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
 	return s.DB.GetAdminByUUID(ctx, userID)
 }
 

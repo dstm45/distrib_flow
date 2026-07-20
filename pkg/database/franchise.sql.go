@@ -12,13 +12,12 @@ import (
 )
 
 const createFranchise = `-- name: CreateFranchise :one
-INSERT INTO franchises (uuid) 
-VALUES (COALESCE($1, gen_random_uuid()))
+INSERT INTO franchises DEFAULT VALUES 
 RETURNING uuid, created_at
 `
 
-func (q *Queries) CreateFranchise(ctx context.Context, dollar_1 interface{}) (Franchise, error) {
-	row := q.db.QueryRow(ctx, createFranchise, dollar_1)
+func (q *Queries) CreateFranchise(ctx context.Context) (Franchise, error) {
+	row := q.db.QueryRow(ctx, createFranchise)
 	var i Franchise
 	err := row.Scan(&i.Uuid, &i.CreatedAt)
 	return i, err
@@ -107,23 +106,29 @@ func (q *Queries) GetFranchisesByOwner(ctx context.Context, userUuid uuid.UUID) 
 }
 
 const getOwnersByFranchise = `-- name: GetOwnersByFranchise :many
-SELECT user_uuid FROM franchise_owners 
-WHERE franchise_uuid = $1
+SELECT fo.user_uuid, u.email FROM franchise_owners fo
+JOIN users u ON fo.user_uuid = u.uuid
+WHERE fo.franchise_uuid = $1
 `
 
-func (q *Queries) GetOwnersByFranchise(ctx context.Context, franchiseUuid uuid.UUID) ([]uuid.UUID, error) {
+type GetOwnersByFranchiseRow struct {
+	UserUuid uuid.UUID `json:"user_uuid"`
+	Email    string    `json:"email"`
+}
+
+func (q *Queries) GetOwnersByFranchise(ctx context.Context, franchiseUuid uuid.UUID) ([]GetOwnersByFranchiseRow, error) {
 	rows, err := q.db.Query(ctx, getOwnersByFranchise, franchiseUuid)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []uuid.UUID
+	var items []GetOwnersByFranchiseRow
 	for rows.Next() {
-		var user_uuid uuid.UUID
-		if err := rows.Scan(&user_uuid); err != nil {
+		var i GetOwnersByFranchiseRow
+		if err := rows.Scan(&i.UserUuid, &i.Email); err != nil {
 			return nil, err
 		}
-		items = append(items, user_uuid)
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

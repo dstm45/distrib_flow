@@ -9,7 +9,7 @@ import (
 
 type FranchiseOwnerService interface {
 	AddOwner(ctx context.Context, userID, franchiseID uuid.UUID) error
-	GetOwnersByFranchise(ctx context.Context, franchiseID uuid.UUID) ([]uuid.UUID, error)
+	GetOwnersByFranchise(ctx context.Context, franchiseID uuid.UUID) ([]database.GetOwnersByFranchiseRow, error)
 	GetFranchisesByOwner(ctx context.Context, userID uuid.UUID) ([]database.Franchise, error)
 	RemoveOwner(ctx context.Context, userID, franchiseID uuid.UUID) error
 }
@@ -29,16 +29,8 @@ func (s *franchiseOwnerService) AddOwner(ctx context.Context, userID, franchiseI
 	})
 }
 
-func (s *franchiseOwnerService) GetOwnersByFranchise(ctx context.Context, franchiseID uuid.UUID) ([]uuid.UUID, error) {
-	owners, err := s.DB.GetFranchiseOwnersByFranchise(ctx, franchiseID)
-	if err != nil {
-		return nil, err
-	}
-	var userIDs []uuid.UUID
-	for _, o := range owners {
-		userIDs = append(userIDs, o.UserUuid)
-	}
-	return userIDs, nil
+func (s *franchiseOwnerService) GetOwnersByFranchise(ctx context.Context, franchiseID uuid.UUID) ([]database.GetOwnersByFranchiseRow, error) {
+	return s.DB.GetOwnersByFranchise(ctx, franchiseID)
 }
 
 func (s *franchiseOwnerService) GetFranchisesByOwner(ctx context.Context, userID uuid.UUID) ([]database.Franchise, error) {

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/dstm45/template/pkg/middlewares"
 	"github.com/dstm45/template/pkg/services"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 )
 
 type FranchiseController struct {
@@ -28,7 +28,7 @@ func (c *FranchiseController) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *FranchiseController) Get(w http.ResponseWriter, r *http.Request) {
-	idStr := mux.Vars(r)["uuid"]
+	idStr := r.PathValue("uuid")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid UUID", http.StatusBadRequest)
@@ -52,7 +52,7 @@ func (c *FranchiseController) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *FranchiseController) Delete(w http.ResponseWriter, r *http.Request) {
-	idStr := mux.Vars(r)["uuid"]
+	idStr := r.PathValue("uuid")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid UUID", http.StatusBadRequest)
@@ -63,4 +63,69 @@ func (c *FranchiseController) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (c *FranchiseController) ListByOwner(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userUUID, ok := ctx.Value(middlewares.UUIDKey).(uuid.UUID)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	franchises, err := c.Service.ListFranchisesByOwner(ctx, userUUID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(franchises)
+}
+
+func (c *FranchiseController) Stats(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userUUID, ok := ctx.Value(middlewares.UUIDKey).(uuid.UUID)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	role, ok := ctx.Value(middlewares.RoleKey).(string)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	idStr := r.PathValue("uuid")
+	franchiseUUID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "Invalid UUID", http.StatusBadRequest)
+		return
+	}
+
+	// If user is not an admin, verify they own the requested franchise
+	if role != "admin" {
+		ownedFranchises, err := c.Service.ListFranchisesByOwner(ctx, userUUID)
+		if err != nil {
+			http.Error(w, "Error verifying franchise ownership", http.StatusInternalServerError)
+			return
+		}
+		owned := false
+		for _, f := range ownedFranchises {
+			if f.Uuid == franchiseUUID {
+				owned = true
+				break
+			}
+		}
+		if !owned {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+	}
+
+	stats, err := c.Service.GetFranchiseStats(ctx, franchiseUUID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
 }

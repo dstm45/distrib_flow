@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/dstm45/template/pkg/middlewares"
 	"github.com/dstm45/template/pkg/services"
 	"github.com/dstm45/template/pkg/utils"
+	"github.com/google/uuid"
 )
 
 type AuthController struct {
@@ -35,7 +37,7 @@ func (c *AuthController) Signin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Erreur lors du décodage du payload json", http.StatusBadRequest)
 		return
 	}
-	refreshCookie, accessCookie, err := c.S.SignIn(ctx, req.Email, req.Password)
+	refreshCookie, accessCookie, userData, err := c.S.SignIn(ctx, req.Email, req.Password)
 	if err != nil {
 		logger.Error("Erreur lors de la connection au compte de l'utilisateur", "error", err)
 		http.Error(w, "Erreur lors de la connection au compte", http.StatusInternalServerError)
@@ -43,7 +45,9 @@ func (c *AuthController) Signin(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, refreshCookie)
 	http.SetCookie(w, accessCookie)
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(userData)
 }
 
 func (c *AuthController) RefreshToken(w http.ResponseWriter, r *http.Request) {
@@ -84,4 +88,20 @@ func (c *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 	})
 	w.WriteHeader(http.StatusOK)
+}
+
+func (c *AuthController) Me(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userUUID, ok := ctx.Value(middlewares.UUIDKey).(uuid.UUID)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	userData, err := c.S.GetUserData(ctx, userUUID)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(userData)
 }

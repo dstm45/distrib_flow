@@ -17,11 +17,12 @@ import (
 var secret = []byte(config.LoadConfig().Secret)
 
 type AuthService interface {
-	SignIn(ctx context.Context, email, password string) (*http.Cookie, *http.Cookie, error)
+	SignIn(ctx context.Context, email, password string) (*http.Cookie, *http.Cookie, database.UserPublicDatum, error)
 	RotateToken(ctx context.Context, r *http.Request) (*http.Cookie, *http.Cookie, error)
 	ParseRefreshToken(tokenString string) (*RefreshTokenClaim, error)
 	ParseAccessToken(tokenString string) (*AccessTokenClaim, error)
 	DeleteToken(ctx context.Context, accessTokenClaim string) error
+	GetUserData(ctx context.Context, id uuid.UUID) (database.UserPublicDatum, error)
 }
 
 type RefreshTokenClaim struct {
@@ -50,27 +51,28 @@ func NewAuthService(db *database.Queries) AuthService {
 	return &service
 }
 
-func (s *authService) SignIn(ctx context.Context, email, password string) (*http.Cookie, *http.Cookie, error) {
+func (s *authService) SignIn(ctx context.Context, email, password string) (*http.Cookie, *http.Cookie, database.UserPublicDatum, error) {
 	user, err := s.DB.GetUserByEmail(ctx, email)
 	if err != nil {
 		utils.CheckHash(password, "placeholder")
-		return nil, nil, errors.New("mauvais Email ou mot de passe")
+		return nil, nil, database.UserPublicDatum{}, errors.New("mauvais Email ou mot de passe")
 	}
 
 	err = utils.CheckHash(password, user.PasswordHash)
 	if err != nil {
-		return nil, nil, errors.New("mauvais Email ou mot de passe")
+		return nil, nil, database.UserPublicDatum{}, errors.New("mauvais Email ou mot de passe")
 	}
 
 	tokenFamily, err := s.DB.CreateTokenFamily(ctx, user.Uuid)
 	if err != nil {
-		return nil, nil, errors.New("arreur lors de la création du taoken")
+		return nil, nil, database.UserPublicDatum{}, errors.New("arreur lors de la création du taoken")
 	}
 	userData, err := s.DB.GetUserDataByUUID(ctx, user.Uuid)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, database.UserPublicDatum{}, err
 	}
-	return s.createTokens(ctx, userData, tokenFamily)
+	refCookie, accCookie, err := s.createTokens(ctx, userData, tokenFamily)
+	return refCookie, accCookie, userData, err
 }
 
 func (s *authService) RotateToken(ctx context.Context, r *http.Request) (*http.Cookie, *http.Cookie, error) {
@@ -238,4 +240,8 @@ func (s *authService) DeleteToken(ctx context.Context, accessTokenString string)
 	}
 	s.DB.DeleteTokensByFamily(ctx, accessTokenClaim.TokenFamily)
 	return nil
+}
+
+func (s *authService) GetUserData(ctx context.Context, id uuid.UUID) (database.UserPublicDatum, error) {
+	return s.DB.GetUserDataByUUID(ctx, id)
 }

@@ -1,6 +1,5 @@
 -- name: CreateFranchise :one
-INSERT INTO franchises (uuid) 
-VALUES (COALESCE($1, gen_random_uuid()))
+INSERT INTO franchises DEFAULT VALUES 
 RETURNING *;
 
 -- name: GetFranchiseByUUID :one
@@ -24,8 +23,9 @@ JOIN franchise_owners fo ON f.uuid = fo.franchise_uuid
 WHERE fo.user_uuid = $1;
 
 -- name: GetOwnersByFranchise :many
-SELECT user_uuid FROM franchise_owners 
-WHERE franchise_uuid = $1;
+SELECT fo.user_uuid, u.email FROM franchise_owners fo
+JOIN users u ON fo.user_uuid = u.uuid
+WHERE fo.franchise_uuid = $1;
 
 -- name: RemoveFranchiseOwner :exec
 DELETE FROM franchise_owners 

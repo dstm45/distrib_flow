@@ -54,6 +54,17 @@ WHERE franchise_uuid = $1;
 SELECT * FROM ventes 
 WHERE vendeur_uuid = $1;
 
+-- name: GetVendeurRecentSales :many
+SELECT 
+    v.uuid AS vente_uuid,
+    p.name AS produit_name,
+    p.price AS produit_price,
+    v.facture_uuid
+FROM ventes v
+JOIN produits p ON v.produit_uuid = p.uuid
+WHERE v.vendeur_uuid = $1
+ORDER BY v.uuid DESC;
+
 -- name: ListVentesByFacture :many
 SELECT * FROM ventes 
 WHERE facture_uuid = $1;
@@ -61,6 +72,15 @@ WHERE facture_uuid = $1;
 -- name: DeleteVente :exec
 DELETE FROM ventes 
 WHERE uuid = $1;
+
+-- name: ClearAllVentes :exec
+DELETE FROM ventes;
+
+-- name: ClearAllFactures :exec
+DELETE FROM factures;
+
+-- name: ClearAllProduits :exec
+DELETE FROM produits;
 
 -- name: GetVenteDetailsWithVendeurEmail :one
 SELECT 

@@ -20,6 +20,11 @@ func main() {
 	}
 	queries := database.New(Pool)
 
+	// Seed default admin and other default entities if tables are empty
+	if err := database.SeedDatabase(ctx, queries); err != nil {
+		log.Printf("Avertissement: Erreur lors de l'initialisation des données de base: %v\n", err)
+	}
+
 	// api and server setup
 	services := api.InitializeServices(queries)
 	app := api.NewAPI(services)

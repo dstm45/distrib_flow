@@ -7,7 +7,6 @@ import (
 	"github.com/dstm45/template/pkg/database"
 	"github.com/dstm45/template/pkg/services"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 )
 
 type AdminController struct {
@@ -42,7 +41,7 @@ func (c *AdminController) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *AdminController) GetUser(w http.ResponseWriter, r *http.Request) {
-	idStr := mux.Vars(r)["uuid"]
+	idStr := r.PathValue("uuid")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid UUID", http.StatusBadRequest)
@@ -54,6 +53,16 @@ func (c *AdminController) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(userData)
+}
+
+func (c *AdminController) ListUsers(w http.ResponseWriter, r *http.Request) {
+	users, err := c.AdminService.ListUsers(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
 }
 
 type createAdminRequest struct {
@@ -74,7 +83,7 @@ func (c *AdminController) CreateAdmin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *AdminController) GetAdmin(w http.ResponseWriter, r *http.Request) {
-	idStr := mux.Vars(r)["user_uuid"]
+	idStr := r.PathValue("user_uuid")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid UUID", http.StatusBadRequest)
@@ -89,7 +98,7 @@ func (c *AdminController) GetAdmin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *AdminController) DeleteAdmin(w http.ResponseWriter, r *http.Request) {
-	idStr := mux.Vars(r)["user_uuid"]
+	idStr := r.PathValue("user_uuid")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		http.Error(w, "Invalid UUID", http.StatusBadRequest)

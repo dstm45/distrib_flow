@@ -6,7 +6,6 @@ import (
 
 	"github.com/dstm45/template/pkg/services"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 )
 
 type FranchiseOwnerController struct {
@@ -22,7 +21,7 @@ type ownerRequest struct {
 }
 
 func (c *FranchiseOwnerController) AddOwner(w http.ResponseWriter, r *http.Request) {
-	franchiseID, err := uuid.Parse(mux.Vars(r)["franchise_uuid"])
+	franchiseID, err := uuid.Parse(r.PathValue("franchise_uuid"))
 	if err != nil {
 		http.Error(w, "Invalid Franchise UUID", http.StatusBadRequest)
 		return
@@ -40,7 +39,7 @@ func (c *FranchiseOwnerController) AddOwner(w http.ResponseWriter, r *http.Reque
 }
 
 func (c *FranchiseOwnerController) GetOwners(w http.ResponseWriter, r *http.Request) {
-	franchiseID, err := uuid.Parse(mux.Vars(r)["franchise_uuid"])
+	franchiseID, err := uuid.Parse(r.PathValue("franchise_uuid"))
 	if err != nil {
 		http.Error(w, "Invalid Franchise UUID", http.StatusBadRequest)
 		return
@@ -50,16 +49,17 @@ func (c *FranchiseOwnerController) GetOwners(w http.ResponseWriter, r *http.Requ
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(owners)
 }
 
 func (c *FranchiseOwnerController) RemoveOwner(w http.ResponseWriter, r *http.Request) {
-	franchiseID, err := uuid.Parse(mux.Vars(r)["franchise_uuid"])
+	franchiseID, err := uuid.Parse(r.PathValue("franchise_uuid"))
 	if err != nil {
 		http.Error(w, "Invalid Franchise UUID", http.StatusBadRequest)
 		return
 	}
-	userID, err := uuid.Parse(mux.Vars(r)["user_uuid"])
+	userID, err := uuid.Parse(r.PathValue("user_uuid"))
 	if err != nil {
 		http.Error(w, "Invalid User UUID", http.StatusBadRequest)
 		return

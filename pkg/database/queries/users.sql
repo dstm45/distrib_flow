@@ -13,7 +13,7 @@ SELECT * FROM user_public_data WHERE uuid=$1;
 
 -- name: GetAdminData :one
 SELECT u.* FROM admins a
-JOIN user_public_data u on u.UUID=a.uuid
+JOIN user_public_data u on u.UUID=a.user_uuid
 WHERE a.user_uuid=$1;
 
 -- name: GetFranchiseOwnerData :one
@@ -25,3 +25,6 @@ WHERE fo.user_uuid = $1;
 SELECT u.* FROM vendeurs v
 JOIN user_public_data u ON u.uuid = v.user_uuid
 WHERE v.user_uuid = $1;
+
+-- name: ListUsers :many
+SELECT * FROM user_public_data;

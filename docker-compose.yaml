@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: df_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-12345}
+      POSTGRES_DB: distrib_flow
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - df_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d distrib_flow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: df_backend
+    environment:
+      SERVER_PORT: "8888"
+      SERVER_ADDRESS: "0.0.0.0"
+      DATABASE_URI: postgres://postgres:${DB_PASSWORD:-12345}@db:5432/distrib_flow?sslmode=disable
+      SECRET: ${JWT_SECRET:-Secret}
+    ports:
+      - "8888:8888"
+    networks:
+      - df_network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: df_frontend
+    ports:
+      - "80:80"
+    networks:
+      - df_network
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+
+networks:
+  df_network:
+    driver: bridge
